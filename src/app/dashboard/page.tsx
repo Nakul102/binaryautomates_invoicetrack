@@ -28,15 +28,25 @@ export default function Dashboard() {
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
+
     try {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter !== "ALL") params.set("status", statusFilter);
+
       const res = await fetch(`/api/invoices?${params}`);
-      if (res.status === 401) { router.push("/login"); return; }
+
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+
       const data = await res.json();
+
       setInvoices(data.invoices ?? []);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, [search, statusFilter, router]);
 
   useEffect(() => { fetchInvoices(); }, [fetchInvoices]);

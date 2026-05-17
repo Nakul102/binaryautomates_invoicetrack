@@ -19,8 +19,12 @@ async function main() {
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL;
   const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (!adminEmail || !adminPassword) {
+    throw new Error(
+      "Missing SEED_ADMIN_EMAIL or SEED_ADMIN_PASSWORD in .env"
+    );
+  }
   const passwordHash = await bcrypt.hash(adminPassword, 12);
-
   const user = await prisma.user.create({
     data: {
       email: adminEmail,
@@ -48,7 +52,7 @@ async function main() {
     prisma.customer.create({
       data: {
         name: "Initech Industries",
-        email: "finance@initech.com",
+        email: "nakulsomani03@gmail.com",
         phone: "+1-555-0303",
         userId: user.id,
       },
@@ -214,7 +218,6 @@ async function main() {
   });
 
   console.log("Database seeded successfully.");
-  console.log(" Admin credentials:");
 }
 
 main()

@@ -11,8 +11,6 @@ export interface EmailInvoiceData {
   description: string;
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export function buildEmailHtml(invoice: EmailInvoiceData, businessName: string = "InvoiceTrack"): string {
   const dueDateFormatted = new Date(invoice.dueDate).toLocaleDateString("en-US", {
     year: "numeric", month: "long", day: "numeric",
@@ -120,12 +118,15 @@ export async function sendReminderEmail(
   }
 
   try {
+    const resend = new Resend(apiKey);
+
     const { data, error } = await resend.emails.send({
       from: process.env.FROM_EMAIL || "onboarding@resend.dev",
       to: invoice.clientEmail,
       subject,
       html,
     });
+
     if (error) return { success: false, error: error.message };
     return { success: true, messageId: data?.id };
   } catch (err: any) {

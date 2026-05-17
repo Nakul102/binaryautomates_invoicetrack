@@ -75,10 +75,60 @@ export async function POST(request: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { invoiceNumber, totalAmount, dueDate, description, customerId } = body;
+    const { 
+      invoiceNumber, 
+      totalAmount, 
+      dueDate, 
+      description, 
+      isNewCustomer, 
+      customerId, 
+      customerName, 
+      customerEmail 
+    } = body;
 
-    if (!invoiceNumber || !totalAmount || !dueDate || !description || !customerId) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
+    if (!invoiceNumber || !totalAmount || !dueDate || !description) {
+      return NextResponse.json({ error: "All core invoice fields are required" }, { status: 400 });
+    }
+
+    let targetCustomerId = customerId;
+
+    if (isNewCustomer) {
+      if (!customerName || !customerEmail) {
+        return NextResponse.json({ error: "Customer name and email are required" }, { status: 400 });
+      }
+
+      const targetEmail = customerEmail.toLowerCase().trim();
+      const trimmedName = customerName.trim();
+
+      const existingCustomer = await prisma.customer.findFirst({
+        where: {
+          email: targetEmail,
+          userId: session.userId,
+        },
+      });
+
+      if (existingCustomer) {
+        if (existingCustomer.name !== trimmedName) {
+          await prisma.customer.update({
+            where: { id: existingCustomer.id },
+            data: { name: trimmedName },
+          });
+        }
+        targetCustomerId = existingCustomer.id;
+      } else {
+        const newCustomer = await prisma.customer.create({
+          data: {
+            name: trimmedName,
+            email: targetEmail,
+            userId: session.userId,
+          },
+        });
+        targetCustomerId = newCustomer.id;
+      }
+    } else {
+      if (!targetCustomerId) {
+        return NextResponse.json({ error: "Customer selection is required" }, { status: 400 });
+      }
     }
 
     const dueDateObj = new Date(dueDate);
@@ -92,7 +142,7 @@ export async function POST(request: NextRequest) {
         dueDate: dueDateObj,
         description,
         status,
-        customerId,
+        customerId: targetCustomerId,
         userId: session.userId,
       },
       select: invoiceSelect,

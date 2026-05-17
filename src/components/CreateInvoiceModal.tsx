@@ -9,13 +9,17 @@ interface Props {
 
 export default function CreateInvoiceModal({ onClose, onCreated }: Props) {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const thirtyDays = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
   useEffect(() => {
-    fetch("/api/customers").then((r) => r.json()).then((d) => setCustomers(d.customers ?? []));
+    fetch("/api/customers")
+      .then((r) => r.json())
+      .then((d) => setCustomers(d.customers ?? []))
+      .catch(() => setError("Failed to load customers"));
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -23,26 +27,40 @@ export default function CreateInvoiceModal({ onClose, onCreated }: Props) {
     setLoading(true);
     setError("");
     const form = e.currentTarget;
-    const get = (name: string) => (form.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value;
+    const get = (name: string) => {
+      const el = form.elements.namedItem(name);
+      return el ? (el as HTMLInputElement).value : "";
+    };
+
+    const payload = {
+      invoiceNumber: get("invoiceNumber"),
+      totalAmount: get("totalAmount"),
+      dueDate: get("dueDate"),
+      description: get("description"),
+      isNewCustomer,
+      customerId: isNewCustomer ? "" : get("customerId"),
+      customerName: isNewCustomer ? get("customerName") : "",
+      customerEmail: isNewCustomer ? get("customerEmail") : "",
+    };
 
     try {
       const res = await fetch("/api/invoices", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          invoiceNumber: get("invoiceNumber"),
-          totalAmount: get("totalAmount"),
-          dueDate: get("dueDate"),
-          description: get("description"),
-          customerId: get("customerId"),
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Failed to create invoice"); return; }
+      if (!res.ok) {
+        setError(data.error || "Failed to create invoice");
+        return;
+      }
       onCreated();
       onClose();
-    } catch { setError("Network error"); }
-    finally { setLoading(false); }
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -66,13 +84,34 @@ export default function CreateInvoiceModal({ onClose, onCreated }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Customer</label>
-            <select name="customerId" required className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]/20 focus:border-[#1a1a2e] bg-white">
-              <option value="">Select a customer...</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.name} — {c.email}</option>
-              ))}
-            </select>
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-medium text-gray-600">Customer Details</label>
+              <button 
+                type="button" 
+                onClick={() => setIsNewCustomer(!isNewCustomer)} 
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+              >
+                {isNewCustomer ? "Select Existing Customer" : "➕ Add New Customer"}
+              </button>
+            </div>
+
+            {isNewCustomer ? (
+              <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-200">
+                <div>
+                  <input name="customerName" required placeholder="Customer Name" className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]/20 focus:border-[#1a1a2e]" />
+                </div>
+                <div>
+                  <input name="customerEmail" type="email" required placeholder="Customer Email" className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]/20 focus:border-[#1a1a2e]" />
+                </div>
+              </div>
+            ) : (
+              <select name="customerId" required className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a1a2e]/20 focus:border-[#1a1a2e] bg-white">
+                <option value="">Select an existing customer...</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name} — {c.email}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
