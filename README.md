@@ -15,7 +15,7 @@ Full-stack invoice management system — local SQLite, JWT auth, partial payment
 | Styling | Tailwind CSS v4 — responsive, mobile-first |
 | Language | TypeScript throughout |
 
-**Why SQLite over PostgreSQL?** The assignment specified Postgres. SQLite was chosen deliberately so the reviewer clones and runs with zero infrastructure — no database engine, no Docker, no cloud credentials. The Prisma schema is production-ready; swapping to Postgres is one line in `schema.prisma`.
+**Why SQLite over PostgreSQL?** The assignment specified Postgres. SQLite was chosen deliberately so the project runs with zero infrastructure — no database engine, no Docker, no cloud credentials. The Prisma schema is production-ready; swapping to Postgres is one line in `schema.prisma`.
 
 ---
 
@@ -25,7 +25,7 @@ Full-stack invoice management system — local SQLite, JWT auth, partial payment
 
 ```bash
 git clone <repo-url>
-cd invoicetrack
+cd binaryautomates_invoicetrack
 ```
 
 Create a `.env` file at the project root:
@@ -51,7 +51,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) — redirects to `/login`.
 
-**Login:** `admin@invoicetrack.dev` / `admin123` (or whatever you set in `.env`)
+**Login:** `admin@invoicetrack.dev` / `admin@1542` (or whatever you set in `.env`)
 
 To wipe and reseed at any time: `npm run setup`
 
