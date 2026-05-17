@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  businessName String
+  createdAt    DateTime   @default(now())
+  invoices     Invoice[]
+  customers    Customer[]
+}
+
+model Customer {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  phone     String?
+  userId    String
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices  Invoice[]
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  totalAmount   Float
+  amountPaid    Float         @default(0.0)
+  dueDate       DateTime
+  description   String
+  status        String        @default("PENDING")
+  customerId    String
+  userId        String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reminders     ReminderLog[]
+  payments      PaymentLog[]
+}
+
+model PaymentLog {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  amountPaid  Float
+  paymentDate DateTime @default(now())
+  note        String?
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model ReminderLog {
+  id        String   @id @default(cuid())
+  invoiceId String
+  sentAt    DateTime @default(now())
+  recipient String
+  medium    String   @default("EMAIL")
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
